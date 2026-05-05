@@ -1,0 +1,14 @@
+[build]
+  base = "apps/studio"
+  command = "pnpm install && pnpm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NPM_FLAGS = "--maxsockets=3"
+  NODE_OPTIONS = "--max-old-space-size=4096"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
