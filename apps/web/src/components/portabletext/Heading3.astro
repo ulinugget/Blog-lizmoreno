@@ -1,0 +1,31 @@
+---
+import type { BlockProps } from "astro-portabletext";
+
+export type Props = BlockProps;
+
+const { node, attrs = {} } = Astro.props;
+const text = extractText(node);
+const id = slugify(text);
+
+function extractText(node: any): string {
+  if (!node.children) return "";
+  return node.children
+    .map((child: any) => child.text || "")
+    .join("")
+    .trim();
+}
+
+function slugify(text: string): string {
+  if (!text) return "";
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+---
+
+<h3 {...attrs} id={id}><slot /></h3>

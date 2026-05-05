@@ -1,0 +1,188 @@
+---
+import type { HeadingItem } from "../lib/portabletext";
+
+interface Props {
+  headings: HeadingItem[];
+}
+
+const { headings } = Astro.props;
+
+if (headings.length === 0) {
+  return null;
+}
+---
+
+<nav class="toc-tabs transition-all duration-300" id="toc-tabs">
+  <div class="toc-home-btn">
+    <a href="/" class="inline-flex text-palette-darkest bg-palette-light/10 hover:bg-palette-light/20 border border-palette-darkest/20 p-2 rounded-full transition" aria-label="Home">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" class="w-5 h-5">
+        <rect width="256" height="256" fill="none"/>
+        <line x1="128" y1="232" x2="128" y2="176" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+        <path d="M48,56h0a80,80,0,0,1,80,80v40a0,0,0,0,1,0,0h0A80,80,0,0,1,48,96V56A0,0,0,0,1,48,56Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+        <path d="M208,56h0a0,0,0,0,1,0,0V96a80,80,0,0,1-80,80h0a0,0,0,0,1,0,0V136a80,80,0,0,1,80-80Z" transform="translate(336 232) rotate(180)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+        <polyline points="80 208 128 232 176 208" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+        <path d="M86.77,66C100,38,128,24,128,24s28,14,41.23,42" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+      </svg>
+    </a>
+  </div>
+  <div class="toc-tabs-inner">
+    {headings.map((heading) => (
+      <a
+        href={`#${heading.id}`}
+        class={`toc-tab toc-level-${heading.level}`}
+        data-target={heading.id}
+      >
+        {heading.text}
+      </a>
+    ))}
+  </div>
+</nav>
+
+<style>
+  .toc-tabs {
+    position: sticky;
+    top: -1px;
+    z-index: 40;
+    background: #fff8ea;
+    border-bottom: 1px solid rgba(158, 118, 118, 0.2);
+    margin-bottom: 2rem;
+  }
+
+  .toc-home-btn {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%) translateX(-1rem);
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.3s ease;
+    z-index: 10;
+  }
+
+  .toc-tabs.is-stuck .toc-home-btn {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+    pointer-events: auto;
+  }
+
+  .toc-tabs-inner {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 0 0.5rem;
+    transition: padding 0.3s ease;
+  }
+
+  .toc-tabs.is-stuck .toc-tabs-inner {
+    padding-left: 3.5rem;
+  }
+
+  .toc-tabs-inner::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toc-tab {
+    display: inline-block;
+    padding: 0.875rem 1.25rem;
+    font-family: 'Libre Baskerville', serif;
+    font-size: 0.9375rem;
+    color: #815b5b;
+    text-decoration: none;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .toc-tab:hover {
+    color: #594545;
+  }
+
+  .toc-tab.active {
+    color: #594545;
+    border-bottom-color: #594545;
+  }
+
+  .toc-level-3,
+  .toc-level-4,
+  .toc-level-5,
+  .toc-level-6 {
+    font-size: 0.875rem;
+    opacity: 0.85;
+  }
+</style>
+
+<script is:inline>
+  document.addEventListener("DOMContentLoaded", () => {
+    const tabs = document.querySelectorAll(".toc-tab");
+    const headings = [];
+
+    tabs.forEach((tab) => {
+      const target = tab.getAttribute("data-target");
+      if (target) {
+        const el = document.getElementById(target);
+        if (el) headings.push({ tab, el });
+      }
+    });
+
+    if (headings.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const id = entry.target.getAttribute("id");
+          const tab = document.querySelector(`.toc-tab[data-target="${id}"]`);
+          if (entry.isIntersecting) {
+            tabs.forEach((t) => t.classList.remove("active"));
+            if (tab) tab.classList.add("active");
+          }
+        });
+      },
+      { rootMargin: "-20% 0px -75% 0px", threshold: 0 }
+    );
+
+    headings.forEach(({ el }) => observer.observe(el));
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", (e) => {
+        e.preventDefault();
+        const target = tab.getAttribute("data-target");
+        if (target) {
+          const el = document.getElementById(target);
+          if (el) {
+            const offset = document.querySelector(".toc-tabs")?.offsetHeight || 0;
+            const top = el.getBoundingClientRect().top + window.scrollY - offset - 20;
+            window.scrollTo({ top, behavior: "smooth" });
+          }
+        }
+      });
+    });
+
+    const tocTabsNav = document.getElementById("toc-tabs");
+    if (tocTabsNav) {
+      const sentinel = document.createElement("div");
+      sentinel.style.height = "1px";
+      sentinel.style.width = "100%";
+      sentinel.style.pointerEvents = "none";
+      // Adjust margin to not affect layout
+      sentinel.style.marginTop = "-1px";
+      tocTabsNav.parentNode.insertBefore(sentinel, tocTabsNav);
+
+      const stickObserver = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.boundingClientRect.top < 0) {
+            tocTabsNav.classList.add("is-stuck");
+            document.getElementById("home-btn")?.classList.add("opacity-0", "pointer-events-none");
+          } else {
+            tocTabsNav.classList.remove("is-stuck");
+            document.getElementById("home-btn")?.classList.remove("opacity-0", "pointer-events-none");
+          }
+        },
+        { rootMargin: "0px", threshold: 1.0 }
+      );
+      stickObserver.observe(sentinel);
+    }
+  });
+</script>

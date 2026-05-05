@@ -1,0 +1,356 @@
+---
+import { client, urlFor } from "../../lib/sanity/client";
+import { postBySlugQuery, postSlugsQuery } from "../../lib/sanity/queries";
+import type { Post } from "../../types";
+import { PortableText } from "astro-portabletext";
+import { extractHeadings } from "../../lib/portabletext";
+import TableOfContents from "../../components/TableOfContents.astro";
+import Footer from "../../components/Footer.astro";
+import Heading1 from "../../components/portabletext/Heading1.astro";
+import Heading2 from "../../components/portabletext/Heading2.astro";
+import Heading3 from "../../components/portabletext/Heading3.astro";
+import Heading4 from "../../components/portabletext/Heading4.astro";
+import Heading5 from "../../components/portabletext/Heading5.astro";
+import Heading6 from "../../components/portabletext/Heading6.astro";
+import Blockquote from "../../components/portabletext/Blockquote.astro";
+import Image from "../../components/portabletext/Image.astro";
+
+export async function getStaticPaths() {
+  const posts = await client.fetch<{ slug: string }[]>(postSlugsQuery);
+  return posts.map((post) => ({ params: { slug: post.slug } }));
+}
+
+const { slug } = Astro.params;
+const post = await client.fetch<Post>(postBySlugQuery, { slug });
+
+if (!post) {
+  return Astro.redirect("/404");
+}
+
+const formattedDate = new Date(post.publishedAt).toLocaleDateString("es-ES", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+
+const headings = extractHeadings(post.body);
+
+const components = {
+  block: {
+    h1: Heading1,
+    h2: Heading2,
+    h3: Heading3,
+    h4: Heading4,
+    h5: Heading5,
+    h6: Heading6,
+    blockquote: Blockquote,
+  },
+  type: {
+    image: Image,
+  },
+};
+---
+
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{post.title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400&family=Oranienbaum&display=swap" rel="stylesheet" />
+    <style is:global>
+      body { font-family: 'Libre Baskerville', serif; font-weight: 400; }
+      .post-content {
+        font-size: 1.125rem;
+        line-height: 1.8;
+        color: #594545;
+      }
+      .post-content p {
+        margin-bottom: 1.75rem;
+      }
+      .post-content p:first-of-type {
+        font-size: 1.25rem;
+        line-height: 1.9;
+      }
+      .post-content h1, .post-content h2, .post-content h3, .post-content h4, .post-content h5, .post-content h6 {
+        font-family: 'Oranienbaum', serif;
+        font-weight: 400;
+        line-height: 1.25;
+        color: #594545;
+        margin-top: 3rem;
+        margin-bottom: 1rem;
+      }
+      .post-content h1 { font-size: 2.25rem; margin-top: 0; }
+      .post-content h2 { font-size: 1.75rem; }
+      .post-content h3 { font-size: 1.375rem; }
+      .post-content h4 { font-size: 1.125rem; }
+      .post-content h5 { font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+      .post-content h6 { font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.08em; color: #815b5b; }
+      .post-content ul {
+        list-style-type: disc;
+        padding-left: 1.5rem;
+        margin-bottom: 1.75rem;
+      }
+      .post-content ul ul {
+        list-style-type: circle;
+        margin-bottom: 0;
+      }
+      .post-content ol {
+        list-style-type: decimal;
+        padding-left: 1.5rem;
+        margin-bottom: 1.75rem;
+      }
+      .post-content ol ol {
+        list-style-type: lower-alpha;
+        margin-bottom: 0;
+      }
+      .post-content li {
+        margin-bottom: 0.5rem;
+      }
+      .post-content li::marker {
+        color: #815b5b;
+      }
+      .post-content blockquote {
+        border-left: 4px solid #9e7676;
+        padding: 1rem 0 1rem 1.5rem;
+        margin: 2.5rem 0;
+        font-style: italic;
+        color: #815b5b;
+        background: rgba(158, 118, 118, 0.1);
+        border-radius: 0 0.5rem 0.5rem 0;
+      }
+      .post-content blockquote p:last-child {
+        margin-bottom: 0;
+      }
+      .post-content figure {
+        margin: 2.5rem 0;
+      }
+      .post-content figure img {
+        border-radius: 0.5rem;
+        width: 100%;
+        height: auto;
+      }
+      .post-content figcaption {
+        text-align: center;
+        font-size: 0.875rem;
+        color: #815b5b;
+        font-style: italic;
+        margin-top: 0.75rem;
+      }
+      .post-content a {
+        color: #9e7676;
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 2px;
+        transition: color 0.15s ease, text-decoration-color 0.15s ease;
+      }
+      .post-content a:hover {
+        color: #815b5b;
+        text-decoration-thickness: 2px;
+      }
+      .post-content strong {
+        font-weight: 700;
+        color: #594545;
+      }
+      .post-content em {
+        font-style: italic;
+      }
+      .post-content u {
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 2px;
+      }
+      .post-content s, .post-content del {
+        text-decoration: line-through;
+        color: #9e7676;
+      }
+      .post-content mark {
+        background: rgba(158, 118, 118, 0.2);
+        padding: 0.1em 0.3em;
+        border-radius: 0.25rem;
+        color: #594545;
+      }
+      .post-content hr {
+        border: none;
+        height: 1px;
+        background: linear-gradient(to right, transparent, #9e7676, transparent);
+        margin: 3rem 0;
+      }
+      .post-content code {
+        background: rgba(158, 118, 118, 0.1);
+        padding: 0.15em 0.4em;
+        border-radius: 0.25rem;
+        font-size: 0.875em;
+        font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+        color: #815b5b;
+        border: 1px solid rgba(158, 118, 118, 0.2);
+      }
+      .post-content pre {
+        background: #594545;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        overflow-x: auto;
+        margin: 2rem 0;
+        line-height: 1.7;
+        position: relative;
+      }
+      .post-content pre code {
+        background: none;
+        padding: 0;
+        font-size: 0.875rem;
+        color: #fff8ea;
+        border: none;
+      }
+      .post-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 2rem 0;
+        font-size: 0.9375rem;
+      }
+      .post-content th {
+        font-family: 'Oranienbaum', serif;
+        font-weight: 400;
+        text-align: left;
+        padding: 0.75rem 1rem;
+        background: rgba(158, 118, 118, 0.1);
+        border-bottom: 2px solid #9e7676;
+        color: #594545;
+      }
+      .post-content td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid rgba(158, 118, 118, 0.2);
+        vertical-align: top;
+      }
+      .post-content tr:hover td {
+        background: rgba(158, 118, 118, 0.05);
+      }
+      .post-content dl {
+        margin-bottom: 1.75rem;
+      }
+      .post-content dt {
+        font-family: 'Oranienbaum', serif;
+        font-weight: 400;
+        color: #594545;
+        margin-bottom: 0.25rem;
+      }
+      .post-content dd {
+        margin-left: 1.5rem;
+        margin-bottom: 1rem;
+        color: #815b5b;
+      }
+    </style>
+  </head>
+  <body class="bg-palette-lightest text-palette-darkest">
+    <div class="relative min-h-screen">
+      <div class="hidden lg:block fixed right-0 top-0 h-screen w-[41.666667%]">
+        {post.coverImage && (
+          <img
+            src={urlFor(post.coverImage).width(1200).height(1600).url()}
+            alt={post.title}
+            class="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
+      </div>
+
+      <div class="lg:w-[58.333333%] w-full">
+        <div class="px-12 py-12 lg:py-16 lg:w-[71.428571%] w-full">
+          <header class="mb-12">
+            <div class="flex items-center gap-4 mb-8">
+              <a href="/" id="home-btn" class="inline-flex text-palette-darkest bg-palette-light/10 hover:bg-palette-light/20 border border-palette-darkest/20 p-3 rounded-full transition-opacity duration-300" aria-label="Home">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" class="w-8 h-8">
+                  <rect width="256" height="256" fill="none"/>
+                  <line x1="128" y1="232" x2="128" y2="176" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+                  <path d="M48,56h0a80,80,0,0,1,80,80v40a0,0,0,0,1,0,0h0A80,80,0,0,1,48,96V56A0,0,0,0,1,48,56Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+                  <path d="M208,56h0a0,0,0,0,1,0,0V96a80,80,0,0,1-80,80h0a0,0,0,0,1,0,0V136a80,80,0,0,1,80-80Z" transform="translate(336 232) rotate(180)" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+                  <polyline points="80 208 128 232 176 208" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+                  <path d="M86.77,66C100,38,128,24,128,24s28,14,41.23,42" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+                </svg>
+              </a>
+              <span class="text-palette-darkest text-2xl tracking-wide" style="font-family: 'Oranienbaum', serif;">
+                El ba&uacute;l de los recuerdos
+              </span>
+            </div>
+            <h1 class="text-4xl lg:text-8xl mb-4" style="font-family: 'Oranienbaum', serif;">{post.title}</h1>
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-lg font-medium text-palette-darkest">{post.authorName}</p>
+                <time class="text-palette-medium">{formattedDate}</time>
+              </div>
+              <button id="share-btn" class="inline-flex items-center justify-center bg-palette-light/10 hover:bg-palette-light/20 border border-palette-darkest/20 p-3 rounded-full transition-all duration-300 text-palette-darkest" aria-label="Compartir" title="Copiar enlace">
+                <span id="share-icon-wrapper">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" class="w-6 h-6">
+                    <rect width="256" height="256" fill="none"/>
+                    <path d="M122.34,71.43l19.8-19.8a48,48,0,0,1,67.88,67.88l-28.28,28.28a48,48,0,0,1-67.88,0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+                    <path d="M133.66,184.57l-19.8,19.8a48,48,0,0,1-67.88-67.88l28.28-28.28a48,48,0,0,1,67.88,0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/>
+                  </svg>
+                </span>
+              </button>
+            </div>
+          </header>
+
+          <TableOfContents headings={headings} />
+
+          {post.excerpt && (
+            <p class="text-xl text-palette-medium mb-8">{post.excerpt}</p>
+          )}
+
+          <div class="post-content">
+            <div id="inicio" class="scroll-mt-32"></div>
+            <PortableText value={post.body as object} components={components} />
+          </div>
+
+          <Footer />
+        </div>
+      </div>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const shareBtn = document.getElementById('share-btn');
+        const iconWrapper = document.getElementById('share-icon-wrapper');
+        
+        if (shareBtn && iconWrapper) {
+          const shareNetworkIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" class="w-6 h-6"><rect width="256" height="256" fill="none"/><circle cx="64" cy="128" r="32" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="176" cy="200" r="32" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><circle cx="176" cy="56" r="32" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="149.08" y1="73.3" x2="90.92" y2="110.7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/><line x1="90.92" y1="145.3" x2="149.08" y2="182.7" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>`;
+          const linkIcon = iconWrapper.innerHTML;
+          const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" class="w-6 h-6"><rect width="256" height="256" fill="none"/><polyline points="216 72 104 184 48 128" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"/></svg>`;
+
+          const canShare = navigator.share !== undefined;
+          
+          if (canShare) {
+            iconWrapper.innerHTML = shareNetworkIcon;
+            shareBtn.setAttribute('title', 'Compartir');
+          }
+          
+          shareBtn.addEventListener('click', async () => {
+            const url = window.location.href;
+            const title = document.title;
+            
+            if (canShare) {
+              try {
+                await navigator.share({
+                  title: title,
+                  url: url
+                });
+              } catch (err) {
+                // AbortError is expected if user cancels the share dialog, no need to log it usually
+                if (err.name !== 'AbortError') {
+                  console.error('Error al compartir:', err);
+                }
+              }
+            } else {
+              try {
+                await navigator.clipboard.writeText(url);
+                iconWrapper.innerHTML = checkIcon;
+                setTimeout(() => {
+                  iconWrapper.innerHTML = linkIcon;
+                }, 2000);
+              } catch (err) {
+                console.error('Error al copiar el enlace: ', err);
+              }
+            }
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

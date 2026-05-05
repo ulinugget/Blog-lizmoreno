@@ -1,0 +1,17 @@
+---
+const { class: className = "mt-16 py-8" } = Astro.props;
+---
+<footer class={`text-center text-palette-medium flex flex-col items-center justify-center gap-2 text-sm ${className}`} style="font-family: 'Libre Baskerville', serif;">
+  <span>Todo el contenido ha sido escrito por Liz Morive.</span>
+  <div class="flex items-center justify-center gap-1.5">
+    <span>Blog diseñado con</span>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" class="w-5 h-5 text-[#815b5b]">
+      <rect width="256" height="256" fill="none"/>
+      <path d="M240,102c0,70-103.79,126.66-108.21,129a8,8,0,0,1-7.58,0C119.79,228.66,16,172,16,102A62.07,62.07,0,0,1,78,40c22.59,0,41.94,12.31,50,32,8.06-19.69,27.41-32,50-32A62.07,62.07,0,0,1,240,102Z" fill="currentColor"/>
+    </svg>
+    <span>por</span>
+    <a href="https://ulinugget.com" target="_blank" rel="noopener noreferrer" class="text-palette-darkest hover:text-[#815b5b] underline decoration-1 underline-offset-4 transition-colors font-semibold">
+      ulinugget
+    </a>
+  </div>
+</footer>

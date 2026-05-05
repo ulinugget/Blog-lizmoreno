@@ -1,0 +1,11 @@
+---
+import type { BlockProps } from "astro-portabletext";
+
+export type Props = BlockProps;
+
+const { attrs = {} } = Astro.props;
+---
+
+<blockquote {...attrs}>
+  <slot />
+</blockquote>
